@@ -27,10 +27,10 @@ const initialState = {
   error: null,
 };
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending} className="w-full">
+    <Button type="submit" disabled={pending || disabled} className="w-full">
       {pending ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing...
@@ -47,6 +47,7 @@ export function MediaForm() {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [dataUri, setDataUri] = useState<string>('');
 
   const placeholderImage = PlaceHolderImages.find(
@@ -66,6 +67,20 @@ export function MediaForm() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.type.startsWith('image/')) {
+        setMediaType('image');
+      } else if (file.type.startsWith('video/')) {
+        setMediaType('video');
+      } else {
+        setMediaType(null);
+        toast({
+          title: 'Unsupported File Type',
+          description: 'Please upload an image or video file.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(URL.createObjectURL(file));
@@ -78,6 +93,7 @@ export function MediaForm() {
   const handleClear = () => {
     setPreview(null);
     setDataUri('');
+    setMediaType(null);
     if (formRef.current) {
       formRef.current.reset();
     }
@@ -108,19 +124,26 @@ export function MediaForm() {
                   />
                   <input type="hidden" name="mediaDataUri" value={dataUri} />
                 </div>
-                {preview && (
-                  <div className="relative">
-                    <Image
-                      src={preview}
-                      alt="Media preview"
-                      width={1280}
-                      height={720}
-                      className="rounded-lg object-cover"
-                    />
+                {preview && mediaType && (
+                  <div className="relative aspect-video w-full">
+                    {mediaType === 'image' ? (
+                      <Image
+                        src={preview}
+                        alt="Media preview"
+                        fill
+                        className="rounded-lg object-cover"
+                      />
+                    ) : (
+                      <video
+                        src={preview}
+                        controls
+                        className="h-full w-full rounded-lg bg-black"
+                      />
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="absolute top-2 right-2 bg-background/50 hover:bg-background/75"
+                      className="absolute top-2 right-2 z-10 bg-background/50 hover:bg-background/75"
                       onClick={handleClear}
                     >
                       <X className="h-4 w-4" />
@@ -141,7 +164,7 @@ export function MediaForm() {
               </div>
             </CardContent>
             <CardFooter>
-              <SubmitButton />
+              <SubmitButton disabled={!dataUri} />
             </CardFooter>
           </Card>
         </form>
