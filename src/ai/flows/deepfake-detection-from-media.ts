@@ -40,18 +40,39 @@ const prompt = ai.definePrompt({
   name: 'deepfakeDetectionFromMediaPrompt',
   input: {schema: DeepfakeDetectionFromMediaInputSchema},
   output: {schema: DeepfakeDetectionFromMediaOutputSchema},
-  prompt: `You are a forensic media analyst specializing in deepfake detection. Your task is to analyze the provided media and determine its authenticity.
+  prompt: `You are a world-class digital forensic expert with a specialization in identifying AI-generated and manipulated media (deepfakes). You are highly skeptical and your primary goal is to uncover any evidence of digital forgery, no matter how subtle. You are examining a piece of media for a high-stakes investigation where accuracy is paramount.
 
 Media to analyze: {{media url=mediaDataUri}}
 
-Conduct your analysis by examining the following aspects, just like a CNN-based deepfake detection system would analyze different feature maps:
-1.  **Facial and Object Integrity:** Look for unnatural warping, strange blinking patterns (or lack thereof), odd facial expressions, and inconsistencies in features like teeth, hair, or ears.
-2.  **Lighting and Shadows:** Analyze the lighting on the subject versus the background. Are there mismatched shadow directions, inconsistent color temperatures, or unnatural highlights?
-3.  **Edge and Boundary Artifacts:** Examine the edges of the subject, especially around the hair and face. Look for a "pasted-on" look, unusual blurring, or pixel-level distortion that might indicate digital composition.
-4.  **Contextual Coherence:** Does the subject's appearance (age, expression) and the background fit together logically?
-5.  **For video:** Analyze movement. Is it fluid? Are there glitches or unnatural transitions between frames?
+Execute a rigorous, multi-layered forensic analysis. Scrutinize the media for any of the following tell-tale signs of AI generation or deepfake manipulation. Document your findings for each point.
 
-Based on your step-by-step forensic analysis of these points, make a final determination. Your output MUST be in the specified JSON format. Provide a confidence score from 0.0 (definitely authentic) to 1.0 (definitely a deepfake). Your explanation should summarize your findings from the forensic analysis.`, // prettier-ignore
+1.  **Pixel-Level & Compression Artifacts:**
+    *   Look for unnatural smoothness or blotchy patches where details should be sharp (e.g., skin, fabric).
+    *   Examine for "checkerboard" or blocky artifacts, especially in low-contrast or background areas.
+    *   Check for inconsistencies in digital noise or grain across different parts of the image.
+
+2.  **Anatomical & Physical Inconsistencies:**
+    *   **Facial Features:** Are the eyes, ears, and teeth symmetrical and consistent? Look for misshapen pupils, incorrect reflections in the eyes, or poorly formed teeth.
+    *   **Hair:** Are individual strands logical, or do they merge unnaturally? Does the hair behave correctly at the edges and boundaries?
+    *   **Hands and Fingers:** Count the fingers. Do they bend naturally? Are the joints and proportions correct? This is a common failure point for AI generators.
+
+3.  **Lighting, Shadows, and Reflections:**
+    *   **Inconsistent Lighting:** Does the light source seem consistent across the entire scene? Is one part of a face lit from the left while another object is lit from the right?
+    *   **Unnatural Shadows:** Are shadows cast correctly? Look for missing shadows or shadows that don't match the object's shape or the light source.
+    *   **Reflections:** Check reflective surfaces (eyes, glasses, windows). Do the reflections accurately represent the surrounding environment?
+
+4.  **Contextual & Logical Flaws:**
+    *   Does the style of objects in the image match? (e.g., a modern smartphone in a medieval setting).
+    *   Is there any nonsensical or garbled text in the background?
+    *   Are there any repeating patterns that look unnatural?
+
+**Conclusion:**
+
+After your thorough analysis, you MUST make a determination.
+- If you find **any significant evidence** of manipulation or AI generation from the checks above, you must classify it as a deepfake.
+- The confidence score reflects your certainty of forgery. A score of 0.0 means you are absolutely certain it's authentic. A score of 1.0 means you are absolutely certain it's a deepfake. Do not be overly cautious; if you find flaws, the score should be high (e.g., > 0.8).
+
+Your output MUST be in the specified JSON format. Your explanation must be a summary of your forensic findings.`,
 });
 
 const deepfakeDetectionFromMediaFlow = ai.defineFlow(
