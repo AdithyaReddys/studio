@@ -40,15 +40,18 @@ const prompt = ai.definePrompt({
   name: 'deepfakeDetectionFromMediaPrompt',
   input: {schema: DeepfakeDetectionFromMediaInputSchema},
   output: {schema: DeepfakeDetectionFromMediaOutputSchema},
-  prompt: `You are an expert in detecting deepfakes. Analyze the provided media content and determine if it is a deepfake.
+  prompt: `You are a forensic media analyst specializing in deepfake detection. Your task is to analyze the provided media and determine its authenticity.
 
-Media: {{media url=mediaDataUri}}
+Media to analyze: {{media url=mediaDataUri}}
 
-Consider various factors such as facial anomalies, inconsistencies in lighting, unnatural movements, and audio manipulations.
+Conduct your analysis by examining the following aspects, just like a CNN-based deepfake detection system would analyze different feature maps:
+1.  **Facial and Object Integrity:** Look for unnatural warping, strange blinking patterns (or lack thereof), odd facial expressions, and inconsistencies in features like teeth, hair, or ears.
+2.  **Lighting and Shadows:** Analyze the lighting on the subject versus the background. Are there mismatched shadow directions, inconsistent color temperatures, or unnatural highlights?
+3.  **Edge and Boundary Artifacts:** Examine the edges of the subject, especially around the hair and face. Look for a "pasted-on" look, unusual blurring, or pixel-level distortion that might indicate digital composition.
+4.  **Contextual Coherence:** Does the subject's appearance (age, expression) and the background fit together logically?
+5.  **For video:** Analyze movement. Is it fluid? Are there glitches or unnatural transitions between frames?
 
-Provide a confidence level (0-1) for your assessment and explain your reasoning.
-
-Return the output in JSON format.`, // prettier-ignore
+Based on your step-by-step forensic analysis of these points, make a final determination. Your output MUST be in the specified JSON format. Provide a confidence score from 0.0 (definitely authentic) to 1.0 (definitely a deepfake). Your explanation should summarize your findings from the forensic analysis.`, // prettier-ignore
 });
 
 const deepfakeDetectionFromMediaFlow = ai.defineFlow(
