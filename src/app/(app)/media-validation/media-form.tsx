@@ -21,6 +21,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Upload, X, Shield, ShieldAlert, Loader2 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useFirebase, addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 const initialState = {
   data: null,
@@ -50,6 +52,7 @@ export function MediaForm() {
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [dataUri, setDataUri] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
+  const { firestore } = useFirebase();
 
   const placeholderImage = PlaceHolderImages.find(
     (img) => img.id === 'media-validation-placeholder'
@@ -63,7 +66,19 @@ export function MediaForm() {
         variant: 'destructive',
       });
     }
-  }, [state, toast]);
+    if (state.data && firestore) {
+      const mediaResultsRef = collection(firestore, 'mediaDetectionResults');
+      const record = {
+        fileName: state.data.fileName,
+        detectionResult: state.data.isDeepfake ? 'Deepfake Detected' : 'Authentic Media',
+        confidenceScore: state.data.confidence,
+        detectedAt: new Date().toISOString(),
+        mediaType: state.data.mediaType,
+        alertSeverity: state.data.isDeepfake ? 'High' : 'Low',
+      };
+      addDocumentNonBlocking(mediaResultsRef, record);
+    }
+  }, [state, toast, firestore]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -1,157 +1,62 @@
 /**
- * This ruleset enforces a security model for the CrimeShield application,
- * prioritizing strict user data isolation while providing read-only access
- * to global analytics data.
+ * This ruleset enforces a security model for the CrimeShield application.
+ * For this demo, it allows any authenticated user (including anonymous users)
+ * to read and create detection results, enabling a global, real-time dashboard.
  *
- * Core Philosophy:
- * The security model is primarily based on user ownership. All data generated
- * by a user is private and can only be accessed by that user. A separate,
- * top-level collection holds analytical data which is readable by any
- * authenticated user but is not writable by clients, protecting it from
- * unauthorized modification.
+ * Core Philosophy (Demo):
+ * To support a live-updating dashboard for all users, results from the
+ * detection engines are stored in global collections. Access is granted to any
+ * authenticated user, with anonymous sign-in handled automatically on the client.
+ * This provides a simple but effective security model for demonstration purposes.
  *
  * Data Structure:
- * - /users/{userId}/... : A hierarchical structure where all user-specific data,
- *   such as media and chat detection results, is nested under a document
- *   corresponding to the user's unique ID.
- * - /dashboardRecords/{recordId} : A flat, top-level collection for storing
- *   globally accessible dashboard analytics, typically populated by backend
- *   processes.
+ * - /mediaDetectionResults/{resultId} : Stores deepfake detection results.
+ * - /chatDetectionResults/{resultId} : Stores scam chat detection results.
  *
- * Key Security Decisions:
- * - User Isolation: A user can only access data within their own
- *   `/users/{userId}` path. Listing or reading other users' data is
- *   strictly forbidden.
- * - Read-Only Analytics: The `/dashboardRecords` collection is readable by all
- *   authenticated users to populate dashboards but is locked down to prevent
- *   any client-side writes (`create`, `update`, `delete`).
- * - No User Listing: It is not possible for any client to list the documents
- *   in the top-level `/users` collection, which prevents enumeration of user IDs.
- * - Denormalization for Authorization: User-generated content documents
- *   (e.g., in `mediaDetectionResults`) are expected to contain a denormalized
- *   `ownerId` field. This allows for fast, efficient, and non-billable
- *   authorization checks directly on the document, avoiding costly `get()`
-*   calls to parent documents.
+ * Key Security Decisions for Demo:
+ * - Anonymous Access: The app automatically signs users in anonymously to meet
+ *   the `isSignedIn()` requirement.
+ * - Global Read/Create: Any authenticated user can create new detection
+ *   results and read all existing results. This is what powers the live dashboard.
+ * - No Update/Delete: To maintain data integrity for the demo, clients are not
+ *   allowed to modify or delete existing records.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for reusable logic
-    /**
-     * Checks if a user is authenticated.
-     */
+    // Helper function to check if a user is authenticated.
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /**
-     * Checks if the currently authenticated user's UID matches the provided userId.
-     * This is the fundamental check for resource ownership.
-     */
+    // Rules for the global collections used in the demo.
+    // Any authenticated user (including anonymous) can read and create records.
+
+    match /mediaDetectionResults/{resultId} {
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    match /chatDetectionResults/{resultId} {
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // The rules below are for a more robust multi-user production app.
+    // They are not used in the current demo but are kept for reference.
+
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /**
-     * Checks for ownership on an existing document. Used for safe updates and deletes.
-     * Denies requests that target non-existent documents.
-     */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * Validates that new user-owned content correctly includes the owner's UID.
-     * This ensures relational integrity between the document path and its data.
-     * IMPORTANT: This rule relies on a denormalized `ownerId` field in the document.
-     */
-    function isNewContentValid(userId) {
-      return request.resource.data.ownerId == userId;
-    }
-
-    /**
-     * Validates that the ownership link (`ownerId`) cannot be changed during an update.
-     * IMPORTANT: This rule relies on a denormalized `ownerId` field in the document.
-     */
-    function isUpdateContentValid() {
-      return request.resource.data.ownerId == resource.data.ownerId;
-    }
-
-
-    /**
-     * @description Rules for the user's root document. This allows a user to create
-     *              their own user document but prevents them from reading, updating,
-     *              or deleting anyone else's, and crucially, prevents listing all users.
-     * @path        /users/{userId}
-     * @allow       (create) An authenticated user creating their own document.
-     *              - auth.uid: "user_abc", path: "/users/user_abc"
-     * @deny        (get, list) An authenticated user trying to read or list any user documents.
-     *              - auth.uid: "user_abc", path: "/users/user_xyz" or "/users"
-     * @principle   Restricts access to a user's own data tree and prevents user enumeration.
-     */
     match /users/{userId} {
-      allow get: if false;
-      allow list: if false;
       allow create: if isOwner(userId);
-      allow update: if false;
-      allow delete: if false;
+      allow get, list, update, delete: if false;
     }
 
-    /**
-     * @description Secures media detection results, ensuring only the owner can
-     *              create, read, update, or delete their own results.
-     * @path        /users/{userId}/mediaDetectionResults/{mediaDetectionResultId}
-     * @allow       (create) A user creating a new media result in their own space.
-     *              - auth.uid: "user_abc", path: "/users/user_abc/mediaDetectionResults/result_123"
-     * @deny        (get) A user trying to read a media result belonging to another user.
-     *              - auth.uid: "user_abc", path: "/users/user_xyz/mediaDetectionResults/result_456"
-     * @principle   Enforces strict document ownership for all CRUD operations.
-     */
-    match /users/{userId}/mediaDetectionResults/{mediaDetectionResultId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && isNewContentValid(userId);
-      allow update: if isExistingOwner(userId) && isUpdateContentValid();
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Secures chat detection results, ensuring only the owner can
-     *              create, read, update, or delete their own results.
-     * @path        /users/{userId}/chatDetectionResults/{chatDetectionResultId}
-     * @allow       (list) A user listing all chat results they own.
-     *              - auth.uid: "user_abc", path: "/users/user_abc/chatDetectionResults"
-     * @deny        (update) A user trying to update a chat result belonging to another user.
-     *              - auth.uid: "user_abc", path: "/users/user_xyz/chatDetectionResults/result_789"
-     * @principle   Enforces strict document ownership for all CRUD operations.
-     */
-    match /users/{userId}/chatDetectionResults/{chatDetectionResultId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && isNewContentValid(userId);
-      allow update: if isExistingOwner(userId) && isUpdateContentValid();
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Manages access to dashboard analytics records. These records are
-     *              publicly readable by any signed-in user but are not writable
-     *              by clients, as they are populated by backend services.
-     * @path        /dashboardRecords/{dashboardRecordId}
-     * @allow       (get, list) Any authenticated user can read dashboard data.
-     *              - auth.uid: "any_user", path: "/dashboardRecords/record_123"
-     * @deny        (create, update, delete) Any client trying to modify the analytics data.
-     *              - auth.uid: "any_user", operation: create
-     * @principle   Provides read-only access to public data for authenticated users,
-     *              while protecting it from client-side modification.
-     */
-    match /dashboardRecords/{dashboardRecordId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+    match /users/{userId}/{document=**} {
+       allow read, write: if isOwner(userId);
     }
   }
 }

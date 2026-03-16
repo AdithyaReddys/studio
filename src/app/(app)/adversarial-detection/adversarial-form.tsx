@@ -17,6 +17,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Bot, Loader2, ShieldAlert } from 'lucide-react';
+import { useFirebase, addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 const initialState = {
   data: null,
@@ -47,6 +49,7 @@ export function AdversarialForm() {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const [modelInput, setModelInput] = useState('');
+  const { firestore } = useFirebase();
 
   useEffect(() => {
     if (state.error) {
@@ -59,8 +62,19 @@ export function AdversarialForm() {
     if (state.data) {
       formRef.current?.reset();
       setModelInput('');
+      if (state.data.isAdversarialAttack && firestore) {
+        const chatResultsRef = collection(firestore, 'chatDetectionResults');
+        const record = {
+          messageContent: state.data.modelInput,
+          detectionResult: 'Suspicious Message',
+          confidenceScore: 0.87, // Example confidence
+          detectedAt: new Date().toISOString(),
+          alertSeverity: 'Medium',
+        };
+        addDocumentNonBlocking(chatResultsRef, record);
+      }
     }
-  }, [state, toast]);
+  }, [state, toast, firestore]);
 
   const loadSampleData = () => {
     setModelInput(sampleScamData.modelInput);
