@@ -58,9 +58,6 @@ const analyzeRealTimeThreatsPrompt = ai.definePrompt({
   Provide a summary of the overall threat landscape.
 
   Ensure the report is well-structured and easy to understand.
-
-  Output in JSON format:
-  {{output schema=RealTimeThreatAnalysisOutputSchema}}
   `,
 });
 
