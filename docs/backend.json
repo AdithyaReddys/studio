@@ -1,0 +1,195 @@
+{
+  "entities": {
+    "MediaDetectionResult": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MediaDetectionResult",
+      "type": "object",
+      "description": "Stores the results of deepfake detection for uploaded media content, including images and videos.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MediaDetectionResult entity."
+        },
+        "mediaFileName": {
+          "type": "string",
+          "description": "The original file name of the analyzed media (e.g., 'image1.jpg')."
+        },
+        "mediaStoragePath": {
+          "type": "string",
+          "description": "A URI pointing to the location of the analyzed media content in Firebase Storage.",
+          "format": "uri"
+        },
+        "detectionResult": {
+          "type": "string",
+          "description": "The outcome of the deepfake detection (e.g., 'Deepfake Detected', 'Real Media')."
+        },
+        "confidenceScore": {
+          "type": "number",
+          "description": "The confidence score of the detection, ranging from 0 to 100."
+        },
+        "detectedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the media detection was performed.",
+          "format": "date-time"
+        },
+        "mediaType": {
+          "type": "string",
+          "description": "The type of media analyzed (e.g., 'image', 'video')."
+        },
+        "alertSeverity": {
+          "type": "string",
+          "description": "The severity level of the alert generated for this detection (e.g., 'Low', 'Medium', 'High')."
+        }
+      },
+      "required": [
+        "id",
+        "mediaFileName",
+        "mediaStoragePath",
+        "detectionResult",
+        "confidenceScore",
+        "detectedAt",
+        "mediaType",
+        "alertSeverity"
+      ]
+    },
+    "ChatDetectionResult": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatDetectionResult",
+      "type": "object",
+      "description": "Stores the results of adversarial or scam chat message detection.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ChatDetectionResult entity."
+        },
+        "messageContent": {
+          "type": "string",
+          "description": "The content of the chat message that was analyzed."
+        },
+        "detectionResult": {
+          "type": "string",
+          "description": "The classification of the chat message (e.g., 'Safe', 'Suspicious', 'Scam')."
+        },
+        "confidenceScore": {
+          "type": "number",
+          "description": "The confidence score of the message classification, ranging from 0 to 100."
+        },
+        "detectedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the chat message detection was performed.",
+          "format": "date-time"
+        },
+        "alertSeverity": {
+          "type": "string",
+          "description": "The severity level of the alert generated for this detection (e.g., 'Low', 'Medium', 'High')."
+        }
+      },
+      "required": [
+        "id",
+        "messageContent",
+        "detectionResult",
+        "confidenceScore",
+        "detectedAt",
+        "alertSeverity"
+      ]
+    },
+    "DashboardRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DashboardRecord",
+      "type": "object",
+      "description": "Represents a generic record for dashboard analytics, often derived from imported datasets or aggregated summaries of detection events.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the DashboardRecord entity."
+        },
+        "recordType": {
+          "type": "string",
+          "description": "The category of the record (e.g., 'phishing', 'spam', 'deepfake', 'scam_chat')."
+        },
+        "detectionStatus": {
+          "type": "string",
+          "description": "The status of the detection for this record (e.g., 'detected', 'safe', 'malicious', 'suspicious')."
+        },
+        "recordDate": {
+          "type": "string",
+          "description": "The date or timestamp associated with this record.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "recordType",
+        "detectionStatus",
+        "recordDate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}/mediaDetectionResults/{mediaDetectionResultId}",
+        "definition": {
+          "entityName": "MediaDetectionResult",
+          "schema": {
+            "$ref": "#/backend/entities/MediaDetectionResult"
+          },
+          "description": "Stores deepfake detection results for media (images/videos) uploaded by a specific user. Each document includes a denormalized 'ownerId' field matching the 'userId' in the path for robust authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this media detection result."
+            },
+            {
+              "name": "mediaDetectionResultId",
+              "description": "The unique identifier for a specific media detection result."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/chatDetectionResults/{chatDetectionResultId}",
+        "definition": {
+          "entityName": "ChatDetectionResult",
+          "schema": {
+            "$ref": "#/backend/entities/ChatDetectionResult"
+          },
+          "description": "Stores adversarial/scam detection results for chat messages entered by a specific user. Each document includes a denormalized 'ownerId' field matching the 'userId' in the path for robust authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user who owns this chat detection result."
+            },
+            {
+              "name": "chatDetectionResultId",
+              "description": "The unique identifier for a specific chat detection result."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/dashboardRecords/{dashboardRecordId}",
+        "definition": {
+          "entityName": "DashboardRecord",
+          "schema": {
+            "$ref": "#/backend/entities/DashboardRecord"
+          },
+          "description": "Stores aggregated analytics records, typically imported from external datasets (e.g., Kaggle), for display on the dashboard. This collection is designed to be globally readable by authenticated users, supporting consistent QAPs.",
+          "params": [
+            {
+              "name": "dashboardRecordId",
+              "description": "The unique identifier for a specific dashboard analytics record."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The proposed Firestore data structure is designed to adhere strictly to the core design principles and strategy mandates, prioritizing authorization independence, clarity, and debuggability. For user-specific data, a hierarchical path structure under a top-level `users` collection is employed. This directly links data ownership to the authenticated user's ID, simplifying security rules and ensuring data segregation. For global analytical data, a top-level collection is used, allowing for broad read access for dashboard display.\n\n**Authorization Independence (CRITICAL):**\n1.  **User-Owned Data (`mediaDetectionResults`, `chatDetectionResults`):** These collections are placed as subcollections under `/users/{userId}/`. This path structure immediately identifies the owner. Crucially, each document within these subcollections (`MediaDetectionResult` and `ChatDetectionResult`) will include a denormalized `ownerId` field (matching the `userId` in the path). This ensures that any authorization check can be performed directly on the document's data (`resource.data.ownerId == request.auth.uid`) without requiring a `get()` operation on a parent `user` document. This makes rules atomic, highly performant, and significantly easier to debug.\n2.  **Global Data (`dashboardRecords`):** This collection is designed for global analytics. Its access is not dependent on a specific user's ownership but rather on a global read permission for authenticated users (and potential administrative write access). Therefore, no `ownerId` denormalization is required for individual user authorization for reads, as the security posture is homogeneous (globally readable by authenticated users).\n\n**QAPs (Rules are not Filters):**\n1.  **User-Specific Data:** By structuring `mediaDetectionResults` and `chatDetectionResults` under `/users/{userId}/`, security rules can easily enforce that `request.auth.uid == userId`. This ensures that any `list` query made by a user to `/users/{request.auth.uid}/mediaDetectionResults` will *only* return their own results, inherently preventing unauthorized data access at the database level without requiring client-side filtering after an insecure fetch.\n2.  **Global Data:** The `/dashboardRecords` collection is structurally segregated. All documents within this collection share the same security posture (e.g., readable by all authenticated users). A `list` query on `/dashboardRecords` will securely return all records, as intended for a global dashboard, without requiring any filtering by the rules themselves beyond the initial authentication check. This adheres to the QAP principle by ensuring the database only returns data the user is explicitly authorized to see."
+  }
+}
