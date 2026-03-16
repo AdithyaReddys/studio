@@ -1,7 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useFormStatus } from 'react-dom';
+import { useEffect, useRef, useState, useActionState } from 'react';
 import Image from 'next/image';
 import { runDeepfakeDetection } from '@/app/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -43,7 +43,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
 }
 
 export function MediaForm() {
-  const [state, formAction] = useFormState(runDeepfakeDetection, initialState);
+  const [state, formAction] = useActionState(runDeepfakeDetection, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const [preview, setPreview] = useState<string | null>(null);

@@ -1,7 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
-import { useEffect, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
+import { useEffect, useRef, useActionState } from 'react';
 import { runAdversarialDetection } from '@/app/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
@@ -40,7 +40,7 @@ function SubmitButton() {
 }
 
 export function AdversarialForm() {
-  const [state, formAction] = useFormState(
+  const [state, formAction] = useActionState(
     runAdversarialDetection,
     initialState
   );

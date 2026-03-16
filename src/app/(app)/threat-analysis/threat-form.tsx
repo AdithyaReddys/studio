@@ -1,7 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
-import { useEffect, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
+import { useEffect, useRef, useActionState } from 'react';
 import { runThreatAnalysis } from '@/app/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
@@ -40,7 +40,7 @@ function SubmitButton() {
 }
 
 export function ThreatAnalysisForm() {
-  const [state, formAction] = useFormState(runThreatAnalysis, initialState);
+  const [state, formAction] = useActionState(runThreatAnalysis, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
 
