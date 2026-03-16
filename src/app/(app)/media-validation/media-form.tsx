@@ -1,7 +1,7 @@
 'use client';
 
-import { useFormStatus, useActionState } from 'react-dom';
-import { useEffect, useRef, useState } from 'react';
+import { useFormStatus } from 'react-dom';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { runDeepfakeDetection } from '@/app/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -69,7 +69,7 @@ export function MediaForm() {
     if (state.data && firestore) {
       const mediaResultsRef = collection(firestore, 'mediaDetectionResults');
       const record = {
-        fileName: state.data.fileName,
+        mediaFileName: state.data.fileName,
         detectionResult: state.data.isDeepfake ? 'Deepfake Detected' : 'Authentic Media',
         confidenceScore: state.data.confidence,
         detectedAt: new Date().toISOString(),
