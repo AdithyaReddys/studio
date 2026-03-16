@@ -61,10 +61,6 @@ export function ThreatAnalysisForm() {
         variant: 'destructive',
       });
     }
-    if (state.data) {
-      formRef.current?.reset();
-      setDataStream('');
-    }
   }, [state, toast]);
 
   return (
