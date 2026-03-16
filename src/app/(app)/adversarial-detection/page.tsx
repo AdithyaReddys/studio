@@ -5,8 +5,8 @@ export default function AdversarialDetectionPage() {
   return (
     <div className="p-4 md:p-8">
       <PageHeader
-        title="Adversarial Attack Detection"
-        description="Identify adversarial attacks on AI systems by monitoring input data and model behavior."
+        title="Scam Chat Detection"
+        description="This module checks messages for malicious patterns and scam attempts."
       />
       <AdversarialForm />
     </div>

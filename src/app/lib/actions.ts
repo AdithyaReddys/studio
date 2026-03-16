@@ -13,9 +13,12 @@ import {
   RealTimeThreatAnalysisInput,
 } from '@/ai/flows/real-time-threat-analysis';
 import { z } from 'zod';
+import { initializeFirebase, addDocumentNonBlocking } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 const deepfakeSchema = z.object({
   mediaDataUri: z.string().min(1, 'Media data is required.'),
+  fileName: z.string().min(1, 'File name is required.'),
 });
 
 const adversarialSchema = z.object({
@@ -34,6 +37,7 @@ export async function runDeepfakeDetection(
 ) {
   const validatedFields = deepfakeSchema.safeParse({
     mediaDataUri: formData.get('mediaDataUri'),
+    fileName: formData.get('fileName'),
   });
 
   if (!validatedFields.success) {
@@ -46,6 +50,21 @@ export async function runDeepfakeDetection(
     const result = await deepfakeDetectionFromMedia(
       validatedFields.data as DeepfakeDetectionFromMediaInput
     );
+
+    const { firestore } = initializeFirebase();
+    const mediaResultsRef = collection(firestore, 'mediaDetectionResults');
+
+    const record = {
+      fileName: validatedFields.data.fileName,
+      result: result.isDeepfake ? 'Deepfake Detected' : 'Authentic Media',
+      confidence: result.confidence,
+      timestamp: new Date().toISOString(),
+      detectedAt: new Date().toISOString(),
+      mediaType: formData.get('mediaFile') ? (formData.get('mediaFile') as File).type.split('/')[0] : 'unknown',
+    };
+    
+    addDocumentNonBlocking(mediaResultsRef, record);
+
     return { data: result };
   } catch (error) {
     console.error(error);
@@ -73,10 +92,26 @@ export async function runAdversarialDetection(
     const result = await detectAdversarialAttack(
       validatedFields.data as DetectAdversarialAttackInput
     );
+    
+    if (result.isAdversarialAttack) {
+      const { firestore } = initializeFirebase();
+      const chatResultsRef = collection(firestore, 'chatDetectionResults');
+      
+      const record = {
+        messageContent: validatedFields.data.modelInput,
+        detectionResult: 'Suspicious Message',
+        confidenceScore: 0.87, // Example confidence
+        detectedAt: new Date().toISOString(),
+        alertSeverity: 'Medium',
+      };
+      
+      addDocumentNonBlocking(chatResultsRef, record);
+    }
+
     return { data: result };
   } catch (error) {
     console.error(error);
-    return { error: 'An error occurred during adversarial attack detection.' };
+    return { error: 'An error occurred during scam detection.' };
   }
 }
 

@@ -1,10 +1,9 @@
 'use client';
 
-import { useFormStatus } from 'react-dom';
-import { useEffect, useRef, useActionState, useState } from 'react';
+import { useFormStatus, useActionState } from 'react-dom';
+import { useEffect, useRef, useState } from 'react';
 import { runAdversarialDetection } from '@/app/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-
 import {
   Card,
   CardContent,
@@ -24,10 +23,8 @@ const initialState = {
   error: null,
 };
 
-const sampleAdversarialData = {
-  modelInput: `A photo of a stop sign with a small, almost invisible sticker on it.`,
-  modelOutput: `The model identifies the image as a "Speed Limit 80" sign.`,
-  expectedBehavior: `The model should have identified the image as a "Stop Sign".`,
+const sampleScamData = {
+  modelInput: `Congratulations! You've won a $1,000 gift card. Click this link to claim your prize: http://bit.ly/totally-safe-link`,
 };
 
 function SubmitButton() {
@@ -39,23 +36,17 @@ function SubmitButton() {
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Detecting...
         </>
       ) : (
-        'Detect Attack'
+        'Detect Scam'
       )}
     </Button>
   );
 }
 
 export function AdversarialForm() {
-  const [state, formAction] = useActionState(
-    runAdversarialDetection,
-    initialState
-  );
+  const [state, formAction] = useActionState(runAdversarialDetection, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-
   const [modelInput, setModelInput] = useState('');
-  const [modelOutput, setModelOutput] = useState('');
-  const [expectedBehavior, setExpectedBehavior] = useState('');
 
   useEffect(() => {
     if (state.error) {
@@ -68,15 +59,11 @@ export function AdversarialForm() {
     if (state.data) {
       formRef.current?.reset();
       setModelInput('');
-      setModelOutput('');
-      setExpectedBehavior('');
     }
   }, [state, toast]);
 
   const loadSampleData = () => {
-    setModelInput(sampleAdversarialData.modelInput);
-    setModelOutput(sampleAdversarialData.modelOutput);
-    setExpectedBehavior(sampleAdversarialData.expectedBehavior);
+    setModelInput(sampleScamData.modelInput);
   };
 
   return (
@@ -85,10 +72,10 @@ export function AdversarialForm() {
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <CardTitle>Attack Parameters</CardTitle>
+              <CardTitle>Message Input</CardTitle>
               <CardDescription>
-                Provide the AI model's input, output, and its expected behavior
-                to check for adversarial manipulation.
+                Enter a message to check it for malicious patterns or scam
+                attempts.
               </CardDescription>
             </div>
             <Button
@@ -102,46 +89,24 @@ export function AdversarialForm() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="modelInput">Model Input</Label>
-              <Textarea
-                id="modelInput"
-                name="modelInput"
-                placeholder="Enter the input provided to the model..."
-                className="h-32"
-                value={modelInput}
-                onChange={(e) => setModelInput(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="modelOutput">Model Output</Label>
-              <Textarea
-                id="modelOutput"
-                name="modelOutput"
-                placeholder="Enter the actual output from the model..."
-                className="h-32"
-                value={modelOutput}
-                onChange={(e) => setModelOutput(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expectedBehavior">Expected Behavior</Label>
-              <Textarea
-                id="expectedBehavior"
-                name="expectedBehavior"
-                placeholder="Describe the model's expected behavior..."
-                className="h-32"
-                value={expectedBehavior}
-                onChange={(e) => setExpectedBehavior(e.target.value)}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="modelInput">Chat Message</Label>
+            <Textarea
+              id="modelInput"
+              name="modelInput"
+              placeholder="Enter the message you want to analyze..."
+              className="h-32"
+              value={modelInput}
+              onChange={(e) => setModelInput(e.target.value)}
+            />
+             <input type="hidden" name="modelOutput" value="N/A" />
+            <input type="hidden" name="expectedBehavior" value="N/A" />
           </div>
           {useFormStatus().pending && (
             <div className="flex flex-col items-center justify-center space-y-4 pt-8 text-center">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
               <p className="text-muted-foreground">
-                AI is analyzing the model behavior...
+                AI is analyzing the message...
               </p>
             </div>
           )}
@@ -163,8 +128,8 @@ export function AdversarialForm() {
 
               <AlertTitle>
                 {state.data.isAdversarialAttack
-                  ? 'Adversarial Attack Detected'
-                  : 'No Attack Detected'}
+                  ? 'Suspicious Message Detected'
+                  : 'Message Appears Safe'}
               </AlertTitle>
               <AlertDescription>{state.data.explanation}</AlertDescription>
             </Alert>

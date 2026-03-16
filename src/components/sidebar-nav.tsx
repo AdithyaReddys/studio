@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   LayoutDashboard,
   FileScan,
-  Bot,
+  MessageSquareWarning,
   BarChart,
 } from 'lucide-react';
 
@@ -29,8 +29,8 @@ const links = [
   },
   {
     href: '/adversarial-detection',
-    label: 'Adversarial Detection',
-    icon: Bot,
+    label: 'Scam Detection',
+    icon: MessageSquareWarning,
   },
   {
     href: '/threat-analysis',

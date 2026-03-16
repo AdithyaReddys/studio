@@ -1,7 +1,7 @@
 'use client';
 
-import { useFormStatus } from 'react-dom';
-import { useEffect, useRef, useState, useActionState } from 'react';
+import { useFormStatus, useActionState } from 'react-dom';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { runDeepfakeDetection } from '@/app/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -49,6 +49,7 @@ export function MediaForm() {
   const [preview, setPreview] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [dataUri, setDataUri] = useState<string>('');
+  const [fileName, setFileName] = useState<string>('');
 
   const placeholderImage = PlaceHolderImages.find(
     (img) => img.id === 'media-validation-placeholder'
@@ -67,6 +68,7 @@ export function MediaForm() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setFileName(file.name);
       if (file.type.startsWith('image/')) {
         setMediaType('image');
       } else if (file.type.startsWith('video/')) {
@@ -93,6 +95,7 @@ export function MediaForm() {
   const handleClear = () => {
     setPreview(null);
     setDataUri('');
+    setFileName('');
     setMediaType(null);
     if (formRef.current) {
       formRef.current.reset();
@@ -123,6 +126,7 @@ export function MediaForm() {
                     className="file:text-foreground"
                   />
                   <input type="hidden" name="mediaDataUri" value={dataUri} />
+                  <input type="hidden" name="fileName" value={fileName} />
                 </div>
                 {preview && mediaType && (
                   <div className="relative aspect-video w-full">
