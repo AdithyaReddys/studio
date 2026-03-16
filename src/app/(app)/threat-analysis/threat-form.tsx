@@ -1,7 +1,7 @@
 'use client';
 
 import { useFormStatus } from 'react-dom';
-import { useEffect, useRef, useActionState } from 'react';
+import { useEffect, useRef, useActionState, useState } from 'react';
 import { runThreatAnalysis } from '@/app/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,6 +24,14 @@ const initialState = {
   error: null,
 };
 
+const sampleLogData = `[2024-07-29 10:00:01] INFO: User 'admin' logged in from 192.168.1.1
+[2024-07-29 10:02:30] WARN: Failed login attempt for user 'root' from 203.0.113.55
+[2024-07-29 10:02:35] WARN: Failed login attempt for user 'root' from 203.0.113.55
+[2024-07-29 10:02:40] WARN: Failed login attempt for user 'root' from 203.0.113.55
+[2024-07-29 10:03:00] ERROR: Multiple failed login attempts detected for user 'root'. Locking account.
+[2024-07-29 10:05:15] INFO: Starting data transfer of 5.2GB from server 'prod-db-01' to 'external-archive.com'
+[2024-07-29 10:06:00] INFO: File '/etc/system/config.xml' modified by process 'unusual_proc_78'`;
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -43,6 +51,7 @@ export function ThreatAnalysisForm() {
   const [state, formAction] = useActionState(runThreatAnalysis, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
+  const [dataStream, setDataStream] = useState('');
 
   useEffect(() => {
     if (state.error) {
@@ -52,6 +61,10 @@ export function ThreatAnalysisForm() {
         variant: 'destructive',
       });
     }
+    if (state.data) {
+      formRef.current?.reset();
+      setDataStream('');
+    }
   }, [state, toast]);
 
   return (
@@ -60,10 +73,22 @@ export function ThreatAnalysisForm() {
         <form ref={formRef} action={formAction}>
           <Card>
             <CardHeader>
-              <CardTitle>Data Stream Input</CardTitle>
-              <CardDescription>
-                Paste your data stream (e.g., logs, network traffic) below.
-              </CardDescription>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle>Data Stream Input</CardTitle>
+                  <CardDescription>
+                    Paste your data stream (e.g., logs, network traffic) below.
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setDataStream(sampleLogData)}
+                  type="button"
+                >
+                  Use Sample
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <Label htmlFor="dataStream" className="sr-only">
@@ -74,6 +99,8 @@ export function ThreatAnalysisForm() {
                 name="dataStream"
                 placeholder="Paste data here..."
                 className="h-64"
+                value={dataStream}
+                onChange={(e) => setDataStream(e.target.value)}
               />
             </CardContent>
             <CardFooter>

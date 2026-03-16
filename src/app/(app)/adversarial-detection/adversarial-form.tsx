@@ -1,7 +1,7 @@
 'use client';
 
 import { useFormStatus } from 'react-dom';
-import { useEffect, useRef, useActionState } from 'react';
+import { useEffect, useRef, useActionState, useState } from 'react';
 import { runAdversarialDetection } from '@/app/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,6 +22,12 @@ import { Bot, Loader2, ShieldAlert } from 'lucide-react';
 const initialState = {
   data: null,
   error: null,
+};
+
+const sampleAdversarialData = {
+  modelInput: `A photo of a stop sign with a small, almost invisible sticker on it.`,
+  modelOutput: `The model identifies the image as a "Speed Limit 80" sign.`,
+  expectedBehavior: `The model should have identified the image as a "Stop Sign".`,
 };
 
 function SubmitButton() {
@@ -47,6 +53,10 @@ export function AdversarialForm() {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
 
+  const [modelInput, setModelInput] = useState('');
+  const [modelOutput, setModelOutput] = useState('');
+  const [expectedBehavior, setExpectedBehavior] = useState('');
+
   useEffect(() => {
     if (state.error) {
       toast({
@@ -57,18 +67,39 @@ export function AdversarialForm() {
     }
     if (state.data) {
       formRef.current?.reset();
+      setModelInput('');
+      setModelOutput('');
+      setExpectedBehavior('');
     }
   }, [state, toast]);
+
+  const loadSampleData = () => {
+    setModelInput(sampleAdversarialData.modelInput);
+    setModelOutput(sampleAdversarialData.modelOutput);
+    setExpectedBehavior(sampleAdversarialData.expectedBehavior);
+  };
 
   return (
     <form ref={formRef} action={formAction}>
       <Card>
         <CardHeader>
-          <CardTitle>Attack Parameters</CardTitle>
-          <CardDescription>
-            Provide the AI model's input, output, and its expected behavior to
-            check for adversarial manipulation.
-          </CardDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <CardTitle>Attack Parameters</CardTitle>
+              <CardDescription>
+                Provide the AI model's input, output, and its expected behavior
+                to check for adversarial manipulation.
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadSampleData}
+              type="button"
+            >
+              Use Sample
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3">
@@ -79,6 +110,8 @@ export function AdversarialForm() {
                 name="modelInput"
                 placeholder="Enter the input provided to the model..."
                 className="h-32"
+                value={modelInput}
+                onChange={(e) => setModelInput(e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -88,6 +121,8 @@ export function AdversarialForm() {
                 name="modelOutput"
                 placeholder="Enter the actual output from the model..."
                 className="h-32"
+                value={modelOutput}
+                onChange={(e) => setModelOutput(e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -97,6 +132,8 @@ export function AdversarialForm() {
                 name="expectedBehavior"
                 placeholder="Describe the model's expected behavior..."
                 className="h-32"
+                value={expectedBehavior}
+                onChange={(e) => setExpectedBehavior(e.target.value)}
               />
             </div>
           </div>
@@ -111,8 +148,12 @@ export function AdversarialForm() {
 
           {state.data && (
             <Alert
-              variant={state.data.isAdversarialAttack ? 'destructive' : 'default'}
-              className={!state.data.isAdversarialAttack ? 'border-green-500' : ''}
+              variant={
+                state.data.isAdversarialAttack ? 'destructive' : 'default'
+              }
+              className={
+                !state.data.isAdversarialAttack ? 'border-green-500' : ''
+              }
             >
               {state.data.isAdversarialAttack ? (
                 <ShieldAlert className="h-4 w-4" />
@@ -125,9 +166,7 @@ export function AdversarialForm() {
                   ? 'Adversarial Attack Detected'
                   : 'No Attack Detected'}
               </AlertTitle>
-              <AlertDescription>
-                {state.data.explanation}
-              </AlertDescription>
+              <AlertDescription>{state.data.explanation}</AlertDescription>
             </Alert>
           )}
 
